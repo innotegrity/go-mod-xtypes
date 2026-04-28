@@ -4,7 +4,7 @@
 
 No unreleased changes
 
-## [v0.1.0] - 2026-04-28
+## [v0.1.1] - 2026-04-28
 
 ### Added
 
