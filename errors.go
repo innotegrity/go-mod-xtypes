@@ -1,6 +1,8 @@
 package xtypes
 
 import (
+	"context"
+
 	"go.innotegrity.dev/mod/xerrors"
 )
 
@@ -49,43 +51,73 @@ type PathOpenFileError struct{ *xerrors.XError }
 type PathWriteError struct{ *xerrors.XError }
 
 // newPathError creates a new [PathError] with the given error and format.
-func newPathError(err error, format string, args ...any) xerrors.Error {
-	return xerrors.WrapfAs(func(e *xerrors.XError) *PathError {
-		return &PathError{XError: e}
-	}, err, PathErrorCode, format, args...)
+func newPathError(ctx context.Context, err error, format string, args ...any) *PathError {
+	return &PathError{
+		XError: xerrors.NewXError(ctx, err, PathErrorCode, format, args...),
+	}
+	/*
+		return xerrors.WrapfAs(func(e *xerrors.XError) *PathError {
+			return &PathError{XError: e}
+		}, err, PathErrorCode, format, args...)
+	*/
 }
 
 // newPathChmodError creates a new [PathChmodError] with the given error and format.
-func newPathChmodError(err error, format string, args ...any) xerrors.Error {
-	return xerrors.WrapfAs(func(e *xerrors.XError) *PathChmodError {
-		return &PathChmodError{XError: e}
-	}, err, PathChmodErrorCode, format, args...)
+func newPathChmodError(ctx context.Context, err error, format string, args ...any) *PathChmodError {
+	return &PathChmodError{
+		XError: xerrors.NewXError(ctx, err, PathChmodErrorCode, format, args...),
+	}
+	/*
+		return xerrors.WrapfAs(func(e *xerrors.XError) *PathChmodError {
+			return &PathChmodError{XError: e}
+		}, err, PathChmodErrorCode, format, args...)
+	*/
 }
 
 // newPathChownError creates a new [PathChownError] with the given error and format.
-func newPathChownError(err error, format string, args ...any) xerrors.Error {
-	return xerrors.WrapfAs(func(e *xerrors.XError) *PathChownError {
-		return &PathChownError{XError: e}
-	}, err, PathChownErrorCode, format, args...)
+func newPathChownError(ctx context.Context, err error, format string, args ...any) *PathChownError {
+	return &PathChownError{
+		XError: xerrors.NewXError(ctx, err, PathChownErrorCode, format, args...),
+	}
+	/*
+		return xerrors.WrapfAs(func(e *xerrors.XError) *PathChownError {
+			return &PathChownError{XError: e}
+		}, err, PathChownErrorCode, format, args...)
+	*/
 }
 
 // newPathCreateError creates a new [PathCreateError] with the given error and format.
-func newPathCreateError(err error, format string, args ...any) xerrors.Error {
-	return xerrors.WrapfAs(func(e *xerrors.XError) *PathCreateError {
-		return &PathCreateError{XError: e}
-	}, err, PathCreateErrorCode, format, args...)
+func newPathCreateError(ctx context.Context, err error, format string, args ...any) *PathCreateError {
+	return &PathCreateError{
+		XError: xerrors.NewXError(ctx, err, PathCreateErrorCode, format, args...),
+	}
+	/*
+		return xerrors.WrapfAs(func(e *xerrors.XError) *PathCreateError {
+			return &PathCreateError{XError: e}
+		}, err, PathCreateErrorCode, format, args...)
+	*/
 }
 
 // newPathOpenFileError creates a new [PathOpenFileError] with the given error and format.
-func newPathOpenFileError(err error, format string, args ...any) xerrors.Error {
-	return xerrors.WrapfAs(func(e *xerrors.XError) *PathOpenFileError {
-		return &PathOpenFileError{XError: e}
-	}, err, PathOpenFileErrorCode, format, args...)
+func newPathOpenFileError(ctx context.Context, err error, format string, args ...any) *PathOpenFileError {
+	return &PathOpenFileError{
+		XError: xerrors.NewXError(ctx, err, PathOpenFileErrorCode, format, args...),
+	}
+	/*
+		return xerrors.WrapfAs(func(e *xerrors.XError) *PathOpenFileError {
+			return &PathOpenFileError{XError: e}
+		}, err, PathOpenFileErrorCode, format, args...)
+	*/
 }
 
 // newPathWriteError creates a new [PathWriteError] with the given error and format.
-func newPathWriteError(err error, format string, args ...any) xerrors.Error {
-	return xerrors.WrapfAs(func(e *xerrors.XError) *PathWriteError {
-		return &PathWriteError{XError: e}
-	}, err, PathWriteErrorCode, format, args...)
+func newPathWriteError(ctx context.Context, err error, format string, args ...any) *PathWriteError {
+	return &PathWriteError{
+		XError: xerrors.NewXError(ctx, err, PathWriteErrorCode, format, args...),
+	}
+	/*
+		return xerrors.WrapfAs(func(e *xerrors.XError) *PathWriteError {
+			return &PathWriteError{XError: e}
+		}, err, PathWriteErrorCode, format, args...)
+	*/
 }

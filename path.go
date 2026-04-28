@@ -1,6 +1,7 @@
 package xtypes
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path"
@@ -37,16 +38,24 @@ type LocalPath struct {
 	Owner UserID `json:"owner" mapstructure:"owner" yaml:"owner"`
 }
 
-// ToAbs attempts to convert the filesystem path to an absolute path.
+// ToAbs attempts to convert the filesystem path to an absolute path using [context.Background].
+func (p *LocalPath) ToAbs() xerrors.Error {
+	return p.ToAbsContext(context.Background())
+}
+
+// ToAbsContext attempts to convert the filesystem path to an absolute path.
 //
 // This function modifies the [LocalPath.FSPath] field in place.
 //
+// The given context is used to transport [xerrors.Error] options (for example caller capture)
+// into any returned structured errors.
+//
 // This function may return any of the following errors:
 //   - [*PathError]: there was a general error while working with the path
-func (p *LocalPath) ToAbs() xerrors.Error {
+func (p *LocalPath) ToAbsContext(ctx context.Context) xerrors.Error {
 	path, err := filepath.Abs(p.FSPath)
 	if err != nil {
-		return newPathError(err, "failed to convert '%s' to an absolute path: %s", p.FSPath, err.Error()).
+		return newPathError(ctx, err, "failed to convert '%s' to an absolute path: %s", p.FSPath, err.Error()).
 			WithAttrs(map[string]any{
 				"path": p.FSPath,
 			})
@@ -68,15 +77,23 @@ func (p *LocalPath) Attrs() map[string]any {
 	}
 }
 
-// Chmod sets the stored permissions on the path.
+// Chmod sets the stored permissions on the path using [context.Background].
+func (p *LocalPath) Chmod() xerrors.Error {
+	return p.ChmodContext(context.Background())
+}
+
+// ChmodContext sets the stored permissions on the path.
+//
+// The given context is used to transport [xerrors.Error] options (for example caller capture)
+// into any returned structured errors.
 //
 // This function may return any of the following errors:
 //   - [*PathChmodError]: there was an error while changing the permissions on the file/folder
 //   - [*PathError]: there was a general error while working with the path
-func (p *LocalPath) Chmod() xerrors.Error {
+func (p *LocalPath) ChmodContext(ctx context.Context) xerrors.Error {
 	pathInfo, err := os.Stat(p.FSPath)
 	if err != nil {
-		return newPathError(err, "failed to change permissions of '%s': %s", p.FSPath, err.Error()).
+		return newPathError(ctx, err, "failed to change permissions of '%s': %s", p.FSPath, err.Error()).
 			WithAttrs(map[string]any{
 				"path": p.FSPath,
 			})
@@ -89,7 +106,7 @@ func (p *LocalPath) Chmod() xerrors.Error {
 
 	err = os.Chmod(p.FSPath, mode.OSFileMode())
 	if err != nil {
-		return newPathChmodError(err, "failed to change permissions of '%s': %s", p.FSPath, err.Error()).
+		return newPathChmodError(ctx, err, "failed to change permissions of '%s': %s", p.FSPath, err.Error()).
 			WithAttrs(map[string]any{
 				"path":     p.FSPath,
 				"new_mode": fmt.Sprintf("%#o", mode),
@@ -99,11 +116,19 @@ func (p *LocalPath) Chmod() xerrors.Error {
 	return nil
 }
 
-// Chown sets the stored ownership for the path.
+// Chown sets the stored ownership for the path using [context.Background].
+func (p *LocalPath) Chown() xerrors.Error {
+	return p.ChownContext(context.Background())
+}
+
+// ChownContext sets the stored ownership for the path.
+//
+// The given context is used to transport [xerrors.Error] options (for example caller capture)
+// into any returned structured errors.
 //
 // This function may return any of the following errors:
 //   - [*PathChownError]: there was an error while changing ownership of the file/folder
-func (p *LocalPath) Chown() xerrors.Error {
+func (p *LocalPath) ChownContext(ctx context.Context) xerrors.Error {
 	// only works for root
 	if os.Geteuid() != 0 {
 		return nil
@@ -111,7 +136,7 @@ func (p *LocalPath) Chown() xerrors.Error {
 
 	err := os.Chown(p.FSPath, int(p.Owner), int(p.Group))
 	if err != nil {
-		return newPathChownError(err, "failed to change ownership of '%s': %s", p.FSPath, err.Error()).
+		return newPathChownError(ctx, err, "failed to change ownership of '%s': %s", p.FSPath, err.Error()).
 			WithAttrs(map[string]any{
 				"path":      p.FSPath,
 				"new_owner": p.Owner.String(),
@@ -122,21 +147,29 @@ func (p *LocalPath) Chown() xerrors.Error {
 	return nil
 }
 
-// MkdirAll creates the given path and any parent folders if they do not exist.
+// MkdirAll creates the given path and any parent folders if they do not exist using [context.Background].
+func (p *LocalPath) MkdirAll() xerrors.Error {
+	return p.MkdirAllContext(context.Background())
+}
+
+// MkdirAllContext creates the given path and any parent folders if they do not exist.
 //
 // If [LocalPath.AutoChmod] is true, the permissions will be set to the [LocalPath.DirMode] value.
 // If [LocalPath.AutoChown] is true, the ownership will be set to the [LocalPath.Owner] and [LocalPath.Group] values.
+//
+// The given context is used to transport [xerrors.Error] options (for example caller capture)
+// into any returned structured errors.
 //
 // This function may return any of the following errors:
 //   - [*PathChmodError]: there was an error while changing the permissions on the folder
 //   - [*PathChownError]: there was an error while changing ownership of the folder
 //   - [*PathCreateError]: there was an error while creating the folder
 //   - [*PathError]: there was a general error while working with the path
-func (p *LocalPath) MkdirAll() xerrors.Error {
+func (p *LocalPath) MkdirAllContext(ctx context.Context) xerrors.Error {
 	// create the folder
 	err := os.MkdirAll(p.FSPath, p.DirMode.OSFileMode())
 	if err != nil {
-		return newPathCreateError(err, "failed to create path '%s': %s", p.FSPath, err.Error()).
+		return newPathCreateError(ctx, err, "failed to create path '%s': %s", p.FSPath, err.Error()).
 			WithAttrs(map[string]any{
 				"path":     p.FSPath,
 				"dir_mode": fmt.Sprintf("%o", p.DirMode),
@@ -145,14 +178,14 @@ func (p *LocalPath) MkdirAll() xerrors.Error {
 
 	// set ownership and permissions
 	if p.AutoChmod {
-		xerr := p.Chmod()
+		xerr := p.ChmodContext(ctx)
 		if xerr != nil {
 			return xerr
 		}
 	}
 
 	if p.AutoChown {
-		xerr := p.Chown()
+		xerr := p.ChownContext(ctx)
 		if xerr != nil {
 			return xerr
 		}
@@ -161,11 +194,19 @@ func (p *LocalPath) MkdirAll() xerrors.Error {
 	return nil
 }
 
-// OpenFile creates/opens the file and returns its handle.
+// OpenFile creates/opens the file and returns its handle using [context.Background].
+func (p *LocalPath) OpenFile(flags int) (*os.File, xerrors.Error) {
+	return p.OpenFileContext(context.Background(), flags)
+}
+
+// OpenFileContext creates/opens the file and returns its handle.
 //
-// If [LocalPath.AutoCreateParent] is true, [LocalPath.MkdirAll] will be called on the file's parent folder first.
-// If [LocalPath.AutoChmod] is true, the permissions will be set to the [LocalPath.DirMode] value.
+// If [LocalPath.AutoCreateParent] is true, [LocalPath.MkdirAllContext] will be called on the file's parent folder
+// first. If [LocalPath.AutoChmod] is true, the permissions will be set to the [LocalPath.DirMode] value.
 // If [LocalPath.AutoChown] is true, the ownership will be set to the [LocalPath.Owner] and [LocalPath.Group] values.
+//
+// The given context is used to transport [xerrors.Error] options (for example caller capture)
+// into any returned structured errors.
 //
 // This function may return any of the following errors:
 //   - [*PathChmodError]: there was an error while changing the permissions on the file/parent folder
@@ -173,7 +214,7 @@ func (p *LocalPath) MkdirAll() xerrors.Error {
 //   - [*PathCreateError]: there was an error while creating the parent folder
 //   - [*PathError]: there was a general error while working with the path
 //   - [*PathOpenFileError]: there was an error while opening the file
-func (p *LocalPath) OpenFile(flags int) (*os.File, xerrors.Error) {
+func (p *LocalPath) OpenFileContext(ctx context.Context, flags int) (*os.File, xerrors.Error) {
 	// create parent folder if desired
 	if p.AutoCreateParent {
 		parent := LocalPath{
@@ -183,9 +224,9 @@ func (p *LocalPath) OpenFile(flags int) (*os.File, xerrors.Error) {
 			FSPath:  path.Dir(p.FSPath),
 		}
 
-		xerr := parent.MkdirAll()
+		xerr := parent.MkdirAllContext(ctx)
 		if xerr != nil {
-			return nil, newPathOpenFileError(xerr, "failed to open file '%s': %s", p.FSPath,
+			return nil, newPathOpenFileError(ctx, xerr, "failed to open file '%s': %s", p.FSPath,
 				xerr.Error()).WithAttrs(map[string]any{
 				"file":      p.FSPath,
 				"file_mode": fmt.Sprintf("%o", p.FileMode),
@@ -196,7 +237,7 @@ func (p *LocalPath) OpenFile(flags int) (*os.File, xerrors.Error) {
 	// open the file
 	file, err := os.OpenFile(p.FSPath, flags, p.FileMode.OSFileMode())
 	if err != nil {
-		return nil, newPathOpenFileError(err, "failed to open file '%s': %s", p.FSPath, err.Error()).
+		return nil, newPathOpenFileError(ctx, err, "failed to open file '%s': %s", p.FSPath, err.Error()).
 			WithAttrs(map[string]any{
 				"file":      p.FSPath,
 				"file_mode": fmt.Sprintf("%o", p.FileMode),
@@ -205,7 +246,7 @@ func (p *LocalPath) OpenFile(flags int) (*os.File, xerrors.Error) {
 
 	// set ownership and permissions
 	if p.AutoChmod {
-		xerr := p.Chmod()
+		xerr := p.ChmodContext(ctx)
 		if xerr != nil {
 			_ = file.Close()
 
@@ -214,7 +255,7 @@ func (p *LocalPath) OpenFile(flags int) (*os.File, xerrors.Error) {
 	}
 
 	if p.AutoChown {
-		xerr := p.Chown()
+		xerr := p.ChownContext(ctx)
 		if xerr != nil {
 			_ = file.Close()
 
@@ -225,10 +266,18 @@ func (p *LocalPath) OpenFile(flags int) (*os.File, xerrors.Error) {
 	return file, nil
 }
 
-// WriteFile writes the given data the file.
+// WriteFile writes the given data to the file using [context.Background].
+func (p *LocalPath) WriteFile(data []byte, overwrite bool) xerrors.Error {
+	return p.WriteFileContext(context.Background(), data, overwrite)
+}
+
+// WriteFileContext writes the given data to the file.
 //
-// This function uses the [LocalPath.OpenFile] function to create/open the file before writing to it. It automatically
-// closes the file after writing to it.
+// This function uses the [LocalPath.OpenFileContext] function to create/open the file before writing to it. It
+// automatically closes the file after writing to it.
+//
+// The given context is used to transport [xerrors.Error] options (for example caller capture)
+// into any returned structured errors.
 //
 // This function may return any of the following errors:
 //   - [*PathChmodError]: there was an error while changing the permissions on the file/parent folder
@@ -237,7 +286,7 @@ func (p *LocalPath) OpenFile(flags int) (*os.File, xerrors.Error) {
 //   - [*PathError]: there was a general error while working with the path
 //   - [*PathOpenFileError]: there was an error while opening the file
 //   - [*PathWriteError]: there was an error while writing to the file
-func (p *LocalPath) WriteFile(data []byte, overwrite bool) xerrors.Error {
+func (p *LocalPath) WriteFileContext(ctx context.Context, data []byte, overwrite bool) xerrors.Error {
 	flags := os.O_CREATE | os.O_RDWR
 	if overwrite {
 		flags |= os.O_TRUNC
@@ -245,7 +294,7 @@ func (p *LocalPath) WriteFile(data []byte, overwrite bool) xerrors.Error {
 		flags |= os.O_APPEND
 	}
 
-	handle, xerr := p.OpenFile(flags)
+	handle, xerr := p.OpenFileContext(ctx, flags)
 	if xerr != nil {
 		return xerr
 	}
@@ -256,7 +305,7 @@ func (p *LocalPath) WriteFile(data []byte, overwrite bool) xerrors.Error {
 
 	_, err := handle.Write(data)
 	if err != nil {
-		return newPathWriteError(err, "failed to write to file '%s': %s", p.FSPath, err.Error()).
+		return newPathWriteError(ctx, err, "failed to write to file '%s': %s", p.FSPath, err.Error()).
 			WithAttr("file", p.FSPath)
 	}
 

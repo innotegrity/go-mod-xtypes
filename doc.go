@@ -54,12 +54,17 @@
 // # Paths and errors
 //
 // [LocalPath] describes a filesystem target with optional directory and file modes, owner, group, and flags to
-// auto-create parents, chmod, or chown after create/open. Methods such as [LocalPath.MkdirAll],
-// [LocalPath.OpenFile], [LocalPath.WriteFile], [LocalPath.Chmod], [LocalPath.Chown], and [LocalPath.ToAbs] return
-// [go.innotegrity.dev/mod/xerrors.Error] values with structured attributes from [LocalPath.Attrs]. Concrete types such
-// as [*PathError], [*PathChmodError], and [*PathCreateError] embed
+// auto-create parents, chmod, or chown after create/open. Methods such as [LocalPath.MkdirAllContext],
+// [LocalPath.OpenFileContext], [LocalPath.WriteFileContext], [LocalPath.ChmodContext], [LocalPath.ChownContext], and
+// [LocalPath.ToAbsContext] return [go.innotegrity.dev/mod/xerrors.Error] values with structured attributes from
+// [LocalPath.Attrs]. Concrete types such as [*PathError], [*PathChmodError], and [*PathCreateError] embed
 // [*go.innotegrity.dev/mod/xerrors.XError]; stable numeric codes are defined as [PathErrorCode], [PathChmodErrorCode],
 // [PathCreateErrorCode], and related constants.
+//
+// [LocalPath] also provides convenience wrappers ([LocalPath.MkdirAll], [LocalPath.OpenFile], [LocalPath.WriteFile],
+// [LocalPath.Chmod], [LocalPath.Chown], and [LocalPath.ToAbs]) that call their Context variants with
+// [context.Background]. Use the Context variants when caller-capture or other xerrors options need to be transported
+// into returned structured errors (for example via [go.innotegrity.dev/mod/xerrors.ContextWithErrorOptions]).
 //
 // Example:
 //
@@ -70,7 +75,7 @@
 //		AutoCreateParent: true,
 //		AutoChmod:        true,
 //	}
-//	if xerr := p.WriteFile([]byte("{}"), true); xerr != nil {
+//	if xerr := p.WriteFileContext(context.Background(), []byte("{}"), true); xerr != nil {
 //		log.Fatal(xerr)
 //	}
 //
