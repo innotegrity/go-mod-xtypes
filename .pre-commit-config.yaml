@@ -1,0 +1,45 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+        name: Check for files > 4MB
+        args:
+          - '--maxkb=4096'
+      - id: check-case-conflict
+        name: Check for filename case conflicts
+      - id: check-shebang-scripts-are-executable
+        name: Check that scripts with shebang are executable
+      - id: check-symlinks
+        name: Check for dead symlinks
+      - id: end-of-file-fixer
+        name: Fix missing newline at end of file
+      - id: mixed-line-ending
+        name: Fix mixed line endings
+        args:
+          - '--fix=auto'
+      - id: trailing-whitespace
+        name: Fix trailing whitespace
+        args:
+          - '--markdown-linebreak-ext=md'
+  - repo: https://github.com/golangci/golangci-lint
+    rev: v2.11.4
+    hooks:
+      - id: golangci-lint
+        name: Run golangci-lint checks
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.22.0
+    hooks:
+      - id: markdownlint-cli2
+        name: Run markdownlint checks
+        args:
+          - '--fix'
+          - '--glob=**/*.md'
+          - '--glob=**/*.mdc'
+  - repo: local
+    hooks:
+      - id: sonar-secrets
+        name: sonar secrets scan
+        entry: sonar analyze secrets --
+        language: system
+        pass_filenames: true

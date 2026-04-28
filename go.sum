@@ -1,0 +1,4 @@
+github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
+github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
+go.innotegrity.dev/mod/xerrors v0.13.0 h1:FbnM1aXPJ+matkirBFlnBnXC8P8AU51mBp097Y0d40M=
+go.innotegrity.dev/mod/xerrors v0.13.0/go.mod h1:ZPyu4Q9ZPaQh4kKSiRseZGbVZes4DR9MmG3you33thA=
