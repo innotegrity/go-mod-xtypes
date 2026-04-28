@@ -12,16 +12,11 @@ import (
 // uuidByteLen is the length of a UUID in bytes (RFC 4122).
 const uuidByteLen = 16
 
-var (
-	uuidNewV7 = uuid.NewV7
-	uuidRead  = rand.Read
-)
-
 // NewUUID generates a new UUID.
 //
 // This function first attempts to generate a v7 UUID. If that fails, a v8 UUID is generated instead.
 func NewUUID() (string, error) {
-	id, err := uuidNewV7()
+	id, err := uuid.NewV7()
 	if err != nil {
 		return generateUUIDv8()
 	}
@@ -33,7 +28,7 @@ func NewUUID() (string, error) {
 func generateUUIDv8() (string, error) {
 	vals := make([]byte, uuidByteLen)
 
-	_, err := uuidRead(vals)
+	_, err := rand.Read(vals)
 	if err != nil {
 		return "", fmt.Errorf("generate random bytes for UUID v8: %w", err)
 	}

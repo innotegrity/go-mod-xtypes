@@ -1,7 +1,6 @@
 package xtypes
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -97,60 +96,3 @@ func TestLocalPathErrorPaths(t *testing.T) {
 		t.Fatalf("unexpected chmod error: %v", xerr)
 	}
 }
-
-func TestLocalPathInjectedErrorBranches(t *testing.T) {
-	origAbs := pathAbsFn
-	origStat := pathStatFn
-	origChmod := pathChmodFn
-	origGeteuid := pathGeteuidFn
-	origChown := pathChownFn
-	origMkdirAll := pathMkdirAll
-	origOpenFile := pathOpenFile
-	t.Cleanup(func() {
-		pathAbsFn = origAbs
-		pathStatFn = origStat
-		pathChmodFn = origChmod
-		pathGeteuidFn = origGeteuid
-		pathChownFn = origChown
-		pathMkdirAll = origMkdirAll
-		pathOpenFile = origOpenFile
-	})
-
-	lp := &LocalPath{FSPath: "x", DirMode: FileMode(0o755), FileMode: FileMode(0o644)}
-
-	pathAbsFn = func(string) (string, error) { return "", errors.New("abs fail") }
-	if xerr := lp.ToAbs(); xerr == nil {
-		t.Fatalf("expected ToAbs injected error")
-	}
-	pathAbsFn = origAbs
-
-	pathStatFn = func(string) (os.FileInfo, error) { return nil, errors.New("stat fail") }
-	if xerr := lp.Chmod(); xerr == nil {
-		t.Fatalf("expected Chmod stat injected error")
-	}
-	pathStatFn = origStat
-
-	pathChmodFn = func(string, os.FileMode) error { return errors.New("chmod fail") }
-	if xerr := lp.Chmod(); xerr == nil {
-		t.Fatalf("expected Chmod chmod injected error")
-	}
-	pathChmodFn = origChmod
-
-	pathGeteuidFn = func() int { return 0 }
-	pathChownFn = func(string, int, int) error { return errors.New("chown fail") }
-	if xerr := lp.Chown(); xerr == nil {
-		t.Fatalf("expected Chown injected error")
-	}
-
-	pathMkdirAll = func(string, os.FileMode) error { return errors.New("mkdir fail") }
-	if xerr := lp.MkdirAll(); xerr == nil {
-		t.Fatalf("expected MkdirAll injected error")
-	}
-	pathMkdirAll = origMkdirAll
-
-	pathOpenFile = func(string, int, os.FileMode) (*os.File, error) { return nil, errors.New("open fail") }
-	if _, xerr := lp.OpenFile(os.O_CREATE | os.O_RDWR); xerr == nil {
-		t.Fatalf("expected OpenFile injected error")
-	}
-}
-

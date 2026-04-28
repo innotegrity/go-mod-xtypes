@@ -9,16 +9,6 @@ import (
 	"go.innotegrity.dev/mod/xerrors"
 )
 
-var (
-	pathAbsFn     = filepath.Abs
-	pathStatFn    = os.Stat
-	pathChmodFn   = os.Chmod
-	pathGeteuidFn = os.Geteuid
-	pathChownFn   = os.Chown
-	pathMkdirAll  = os.MkdirAll
-	pathOpenFile  = os.OpenFile
-)
-
 // LocalPath holds settings for a particular file or folder.
 type LocalPath struct {
 	// AutoChmod indicates if the permissions of the file or directory should be changed when creating or opening it.
@@ -54,7 +44,7 @@ type LocalPath struct {
 // This function may return any of the following errors:
 //   - [*PathError]: there was a general error while working with the path
 func (p *LocalPath) ToAbs() xerrors.Error {
-	path, err := pathAbsFn(p.FSPath)
+	path, err := filepath.Abs(p.FSPath)
 	if err != nil {
 		return newPathError(err, "failed to convert '%s' to an absolute path: %s", p.FSPath, err.Error()).
 			WithAttrs(map[string]any{
@@ -84,7 +74,7 @@ func (p *LocalPath) Attrs() map[string]any {
 //   - [*PathChmodError]: there was an error while changing the permissions on the file/folder
 //   - [*PathError]: there was a general error while working with the path
 func (p *LocalPath) Chmod() xerrors.Error {
-	pathInfo, err := pathStatFn(p.FSPath)
+	pathInfo, err := os.Stat(p.FSPath)
 	if err != nil {
 		return newPathError(err, "failed to change permissions of '%s': %s", p.FSPath, err.Error()).
 			WithAttrs(map[string]any{
@@ -97,7 +87,7 @@ func (p *LocalPath) Chmod() xerrors.Error {
 		mode = p.DirMode
 	}
 
-	err = pathChmodFn(p.FSPath, mode.OSFileMode())
+	err = os.Chmod(p.FSPath, mode.OSFileMode())
 	if err != nil {
 		return newPathChmodError(err, "failed to change permissions of '%s': %s", p.FSPath, err.Error()).
 			WithAttrs(map[string]any{
@@ -115,11 +105,11 @@ func (p *LocalPath) Chmod() xerrors.Error {
 //   - [*PathChownError]: there was an error while changing ownership of the file/folder
 func (p *LocalPath) Chown() xerrors.Error {
 	// only works for root
-	if pathGeteuidFn() != 0 {
+	if os.Geteuid() != 0 {
 		return nil
 	}
 
-	err := pathChownFn(p.FSPath, int(p.Owner), int(p.Group))
+	err := os.Chown(p.FSPath, int(p.Owner), int(p.Group))
 	if err != nil {
 		return newPathChownError(err, "failed to change ownership of '%s': %s", p.FSPath, err.Error()).
 			WithAttrs(map[string]any{
@@ -144,7 +134,7 @@ func (p *LocalPath) Chown() xerrors.Error {
 //   - [*PathError]: there was a general error while working with the path
 func (p *LocalPath) MkdirAll() xerrors.Error {
 	// create the folder
-	err := pathMkdirAll(p.FSPath, p.DirMode.OSFileMode())
+	err := os.MkdirAll(p.FSPath, p.DirMode.OSFileMode())
 	if err != nil {
 		return newPathCreateError(err, "failed to create path '%s': %s", p.FSPath, err.Error()).
 			WithAttrs(map[string]any{
@@ -204,7 +194,7 @@ func (p *LocalPath) OpenFile(flags int) (*os.File, xerrors.Error) {
 	}
 
 	// open the file
-	file, err := pathOpenFile(p.FSPath, flags, p.FileMode.OSFileMode())
+	file, err := os.OpenFile(p.FSPath, flags, p.FileMode.OSFileMode())
 	if err != nil {
 		return nil, newPathOpenFileError(err, "failed to open file '%s': %s", p.FSPath, err.Error()).
 			WithAttrs(map[string]any{
